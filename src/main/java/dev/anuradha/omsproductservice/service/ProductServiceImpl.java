@@ -5,6 +5,7 @@ import dev.anuradha.omsproductservice.entity.Product;
 import dev.anuradha.omsproductservice.repository.ProductRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -16,9 +17,8 @@ import java.util.UUID;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
-    private final RedisTemplate<String, Object> template;
 
-    private static final String PRODUCT_CACHE = "product";
+    private static final String PRODUCT_CACHE = "product:";
 
     @Override
     public Product createProduct(CreateProductRequest request) {
@@ -33,25 +33,12 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Cacheable(value = "products", key = "#id")
     public Product getProduct(UUID id) {
 
-        String key = PRODUCT_CACHE + id;
+        log.info("Fetching products from DB for id: {}", id);
 
-        //check the catche first
-        Product cached = template.opsForValue().get(key);
-        if(cached != null){
-            log.info("Product fetched from Redis cache");
-            return cached;
-        }
-
-        //if not found fetch from DB, then store in cache
-        Product product = productRepository.findById(id)
+        return productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
-
-        //store in cache
-        template.opsForValue().set(key, product);
-        return product;
-
-
     }
 }

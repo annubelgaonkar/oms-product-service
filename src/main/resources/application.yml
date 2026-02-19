@@ -17,7 +17,17 @@
         hibernate:
             ddl-auto: update
         show-sql: true
+        properties:
+          hibernate:
+            format_sql: true
 
     redis:
         host: localhost
         port: 6379
+        timeout: 2000
+
+
+  logging:
+    level:
+      root: INFO
+      com.oms.product: DEBUG
